@@ -1,29 +1,238 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Document</title>
-	<!-- cyborg,journal,readable,spacelab,darkly,lumen,sandstone,superhero,cerulean,flatly,simplex,united,cosmo,paper,slate,yeti -->
-	<link rel="stylesheet" href="//cdn.jsdelivr.net/g/bootswatch(slate/bootstrap.min.css)">
-	<style>
-		body {
-			margin-top: 1em;
-		}
-	</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Document</title>
+    <!-- cyborg,journal,readable,spacelab,darkly,lumen,sandstone,superhero,cerulean,flatly,simplex,united,cosmo,paper,slate,yeti -->
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/g/bootswatch(slate/bootstrap.min.css)">
+    <style>
+    body {
+        margin-top: 1em;
+    }
+    
+    .btn-wide {
+        width: 100%;
+    }
+    
+    .pad-bottom {
+        margin-bottom: .8em;
+    }
+    </style>
 </head>
+
 <body>
-	<div class="container">
-		<div class="row">
-			<div class="col-sm-12">
-				<h1>Zipio...</h1>
-				<p>come back later...</p>
-			</div>
-		</div>
-	</div>
-	<!-- chance,momentjs,sugar,knockout,bootstrap,lodash,hammerjs,chartist.js,ion.rangeslider,issuemd -->
-	<script src="//cdn.jsdelivr.net/g/jquery@2,knockout,momentjs,underscorejs,firebase"></script>
-	<script src="//cdn.rawgit.com/tyrsius/FireBind/master/firebind.js"></script>
-	<script src="app.js"></script>
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-12">
+                <h1>Zipio...</h1>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-12">
+                <form class="form-horizontal" data-bind="submit: user.add">
+                    <div class="row">
+                        <div class="col-sm-3">
+                            <input class="form-control pad-bottom" data-bind="value: user.username" />
+                        </div>
+                        <div class="col-sm-3">
+                            <input class="form-control pad-bottom" data-bind="value: user.firstname" />
+                        </div>
+                        <div class="col-sm-3">
+                            <input class="form-control pad-bottom" data-bind="value: user.lastname" />
+                        </div>
+                        <div class="col-sm-3">
+                            <button class="btn btn-default btn-wide pad-bottom" type="submit">Add user</button>
+                        </div>
+                    </div>
+                </form>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>username</th>
+                            <th>firstname</th>
+                            <th>lastname</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody data-bind="foreach: users">
+                        <tr>
+                            <td data-bind="text: username"></td>
+                            <td data-bind="text: firstname"></td>
+                            <td data-bind="text: lastname"></td>
+                            <td><a data-bind="click: $parent.removeUser">remove</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-12">
+                <form class="form-horizontal" data-bind="submit: customer.add">
+                    <div class="row">
+                        <div class="col-sm-3">
+                            <input class="form-control pad-bottom" data-bind="value: customer.title" />
+                        </div>
+                        <div class="col-sm-3">
+                            <input class="form-control pad-bottom" data-bind="value: customer.firstname" />
+                        </div>
+                        <div class="col-sm-3">
+                            <input class="form-control pad-bottom" data-bind="value: customer.lastname" />
+                        </div>
+                        <div class="col-sm-3">
+                            <button class="btn btn-default btn-wide pad-bottom" type="submit">Add customer</button>
+                        </div>
+                    </div>
+                </form>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>title</th>
+                            <th>firstname</th>
+                            <th>lastname</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody data-bind="foreach: customers">
+                        <tr>
+                            <td data-bind="text: title"></td>
+                            <td data-bind="text: firstname"></td>
+                            <td data-bind="text: lastname"></td>
+                            <td><a data-bind="click: $parent.removeCustomer">remove</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <!-- chance,momentjs,sugar,knockout,bootstrap,lodash,hammerjs,chartist.js,ion.rangeslider,firebase -->
+    <script src="//cdn.jsdelivr.net/g/jquery@2,knockout,momentjs,underscorejs,sugar"></script>
+    <script src="https://cdn.firebase.com/v0/firebase.js"></script>
+    <script src="//cdn.rawgit.com/tyrsius/FireBind/master/firebind.js"></script>
+    <script src="app.js"></script>
+    <script>
+    ko.bindingHandlers.placeholder = {
+        init: function(element, valueAccessor, allBindingsAccessor) {
+            var underlyingObservable = valueAccessor();
+            ko.applyBindingsToNode(element, {
+                attr: {
+                    placeholder: underlyingObservable
+                }
+            });
+        }
+    };
+
+    $(function() {
+
+        // // Initialize Firebase
+        // var config = {
+        //     apiKey: "AIzaSyBsy_AjKSmEPoNfqomI4xFm7syXgyHztec",
+        //     authDomain: "yapa-532be.firebaseapp.com",
+        //     databaseURL: "https://yapa-532be.firebaseio.com",
+        //     storageBucket: "yapa-532be.appspot.com",
+        // };
+        // var root = firebase.initializeApp(config);
+
+        var firebase = new Firebase('yapa-532be.firebaseio.com/');
+
+        var vm = new ViewModel(firebase);
+
+        function User(id, data, fireRef) {
+
+            var self = this;
+
+            self.id = id;
+
+            var map = {
+                username: data.username || '',
+                firstname: data.firstname || '',
+                lastname: data.lastname || ''
+            };
+
+            ko.fireModel(self, map, fireRef);
+
+        }
+
+        vm.user = {
+            username: ko.observable('joe.smith'),
+            firstname: ko.observable('Joe'),
+            lastname: ko.observable('Smith'),
+            add: function() {
+                vm.addUser({
+                    username: vm.user.username,
+                    firstname: vm.user.firstname,
+                    lastname: vm.user.lastname
+                });
+            }
+        };
+
+
+        function Customer(id, data, fireRef) {
+
+            var self = this;
+
+            self.id = id;
+
+            var map = {
+                title: data.title || '',
+                firstname: data.firstname || '',
+                lastname: data.lastname || ''
+            };
+
+            ko.fireModel(self, map, fireRef);
+
+        }
+
+        vm.customer = {
+            title: ko.observable('Mr.'),
+            firstname: ko.observable('Jason'),
+            lastname: ko.observable('Gooder'),
+            add: function() {
+                vm.addCustomer({
+                    title: vm.customer.title,
+                    firstname: vm.customer.firstname,
+                    lastname: vm.customer.lastname
+                });
+            }
+        };
+
+
+        function ViewModel(firebase) {
+
+            var self = this;
+
+            self.users = ko.fireSet(firebase.child('users'), User);
+
+            self.addUser = function(data) {
+                self.users.push(data);
+            };
+
+            self.removeUser = function(user) {
+                self.users.remove(user);
+            };
+
+
+            self.customers = ko.fireSet(firebase.child('customers'), Customer);
+
+            self.addCustomer = function(data) {
+                self.customers.push(data);
+            };
+
+            self.removeCustomer = function(customer) {
+                self.customers.remove(customer);
+            };
+
+            // self.reset = function() {
+            //     self.users.removeAll();
+            // };
+
+        }
+
+        ko.applyBindings(vm);
+
+    });
+    </script>
 </body>
+
 </html>
