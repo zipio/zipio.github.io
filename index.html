@@ -35,7 +35,7 @@
                     </thead>
                     <tbody data-bind="foreach: table">
                         <tr>
-                        	<!-- ko foreach: $parent.fields -->
+                            <!-- ko foreach: $parent.fields -->
                             <td data-bind="text: $parent[$data]"></td>
                             <!-- /ko -->
                             <td><a data-bind="click: $parent.remove">remove</a></td>
@@ -56,11 +56,37 @@
                 </form>
             </div>
         </div>
+        <div class="row">
+            <div class="col-sm-12">
+        		<h2>SQL</h2>
+                <div class="col-sm-9">
+                	<textarea class="form-control" data-bind="value: query"></textarea>
+                </div>
+                <div class="col-sm-3">
+                    <button class="btn btn-default btn-wide pad-bottom" type="submit" data-bind="click: sql">Execute</button>
+                </div>
+            </div>
+            <div class="col-sm-12">
+                <table class="table table-striped">
+                    <thead>
+                        <tr data-bind="foreach: sql_cols">
+                            <th data-bind="text: $data"></th>
+                        </tr>
+                    </thead>
+                    <tbody data-bind="foreach: sql_rows">
+                        <tr data-bind="foreach: $data">
+                            <td data-bind="text: $data"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-    <!-- chance,momentjs,sugar,knockout,bootstrap,lodash,hammerjs,chartist.js,ion.rangeslider,firebase -->
+    <!-- chance,momentjs,sugar,knockout,bootstrap,lodash,hammerjs,chartist.js,ion.rangeslider,firebase,alasql -->
     <script src="//cdn.jsdelivr.net/g/jquery@2,knockout,momentjs,underscorejs,chance"></script>
     <script src="https://cdn.firebase.com/v0/firebase.js"></script>
     <script src="//cdn.rawgit.com/tyrsius/FireBind/master/firebind.js"></script>
+    <script src="http://kripken.github.io/sql.js/js/sql.js"></script>
     <script src="app.js"></script>
     <script>
     $(function() {
@@ -121,14 +147,14 @@
             }
 
             return {
-            	name: tableName,
+                name: tableName,
                 table: table,
                 data: data,
                 add: add,
                 remove: remove,
                 fields: fields
             };
-            
+
         }
 
         function ViewModel(firebase) {
@@ -136,13 +162,38 @@
             var self = this;
 
             self.tables = [
-            	tableGenerator('users', ['username', 'firstname', 'lastname']),
-            	tableGenerator('customers', ['title', 'firstname', 'lastname'])
-        	];
+                tableGenerator('users', ['username', 'firstname', 'lastname']),
+                tableGenerator('customers', ['title', 'firstname', 'lastname'])
+            ];
+
+            var db = new SQL.Database();
+
+            _.each(self.tables, function(table) {
+                table.table.subscribe(function(rows) {
+                    db.run("DROP TABLE IF EXISTS " + table.name + ";");
+                    db.run("CREATE TABLE " + table.name + " (" + table.fields[0] + ", " + table.fields[1] + ", " + table.fields[2] + ");");
+                    _.each(rows, function(row) {
+                        db.run("INSERT INTO " + table.name + " (" + _.keys(_.omit(row, 'id')).join(", ") + ") VALUES ('" + _.values(ko.toJS(_.omit(row, 'id'))).join("', '") + "');");
+                    });
+                    // console.table(db.exec("SELECT * FROM " + table.name + ";")[0].values.map(function(record){ return _.object(table.fields, record); }));
+                });
+            });
+
+            self.query = ko.observable('select * from (select firstname, lastname from users union select firstname, lastname from customers);');
+            self.sql_cols = ko.observableArray([]);
+            self.sql_rows = ko.observableArray([]);
+            self.sql = function() {
+                var result = db.exec(self.query())[0];
+                if (result.values.length) {
+                    self.sql_cols(result.columns);
+                    self.sql_rows(result.values);
+                }
+            };
 
         }
 
         ko.applyBindings(vm);
+        window.vm = vm;
 
     });
     </script>
